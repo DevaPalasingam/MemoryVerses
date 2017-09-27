@@ -1,0 +1,1212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0043)http://www.memorizenow.com/MemorizeNow.html -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>MemorizeNow.com</title>
+
+<meta name="keywords" content="Memorize Now, web application">
+<meta http-equiv="charset" content="iso-8859-1">
+<meta name="description" content="Memorize Now">
+
+
+<script type="text/javascript">
+function changeNavButton(x) {
+  functionBlocksOff();
+  clearFlash();
+  if (x == 'pageMem') {
+    document.getElementById('memlabel').style.display="block";
+    fetchItem(document.getElementById('currentitemNum').value);
+    document.getElementById('memorize').style.display="block";
+    resetBlanks();
+    changeTab('word');
+    hideShow('show');
+    processText(0, 'W');
+  }
+  else if (x == 'pageFlash') {
+    fc_reset();
+    flashcard('q');
+  }
+  else if (x == 'pageDisplay') {
+    setDisplayAllOn();
+    document.getElementById('displaylabel').style.display="block";
+    document.getElementById('displayWell').style.display="block";
+  }
+  else {
+    document.getElementById('allitems').value = infofromtable();
+    document.getElementById('submitdata').submit();
+  }
+}
+
+
+function functionBlocksOff() {
+  document.getElementById('displayWell').style.display="none";
+  document.getElementById('flashboxholder').style.display="none";
+  document.getElementById('memorize').style.display="none";
+  document.getElementById('displaylabel').style.display="none";
+  document.getElementById('flashlabel').style.display="none";
+  document.getElementById('memlabel').style.display="none";
+}
+
+function infofromtable() {
+  var fl=document.getElementById('datatable');
+  var iRowCount = fl.rows.length;
+  var r = 0;
+  var brk = '';
+  var x = '';
+  while (r < iRowCount) {
+    if (r > 0) { brk = "_BrK_"; }
+    if (brk) { x = x + brk; }
+    x = x + fl.rows[r].cells[0].innerHTML + '_IBrK_' + fl.rows[r].cells[1].innerHTML + '_IBrK_' + fl.rows[r].cells[2].innerHTML;
+    r++;
+  }
+  return x;
+}
+
+function setDisplayAllOn() {
+  var nRows = document.getElementById('datatable').getElementsByTagName('tr');
+  var rowCount = nRows.length-1;
+  var x = '';
+  var fl=document.getElementById('datatable');
+  for (i=0; i<=rowCount; i++) {
+    var count = i + 1;
+    x = x + '<p><b>' + count + ') ' + fl.rows[i].cells[1].innerHTML + '</b><br />' + fl.rows[i].cells[2].innerHTML + '</p>';
+  }
+  document.getElementById('displayall').innerHTML=x;
+}
+
+
+// FLASHCARD
+
+function flashcard(qa) {
+  functionBlocksOff();
+  document.getElementById('flashlabel').style.display="block";
+  document.getElementById('fcretry').style.display="none";
+  document.getElementById('flashboxholder').style.display="block";
+  var r = 0;
+  setCurrentItemNum(r, 'n');
+  var fl=document.getElementById('datatable');
+  var len = fl.rows.length;
+  while (r < len) {
+    var x=fl.rows[r].cells[0].innerHTML;
+    setCurrentItemNum(r, 'n');
+    if ((qa == 'q') && (x == 'n')) {
+      document.getElementById('flashbox').innerHTML=fl.rows[r].cells[1].innerHTML;
+      document.getElementById('datatable').rows[r].cells[0].innerHTML='c';
+      document.getElementById('showanswer').style.display="block";
+      document.getElementById('answerr').style.display="none";
+      document.getElementById('answerw').style.display="none";
+      var end='y';
+    }
+    if ((qa == 'a') && (x == 'c')) {
+      var ans=fl.rows[r].cells[1].innerHTML + '<br />' + fl.rows[r].cells[2].innerHTML;
+      document.getElementById('flashbox').innerHTML=ans;
+      document.getElementById('showanswer').style.display="none";
+      document.getElementById('answerr').style.display="inline";
+      document.getElementById('answerw').style.display="inline";
+      var end='y';
+    }
+    if ((qa == 'p') && (x == 'c')) {
+      fl.rows[r].cells[0].innerHTML='p';
+      document.getElementById('listTable').rows[r].cells[1].innerHTML='<span class="fcresult"><font color="green">&#10004;</font></span>';
+      document.getElementById('flashnumright').value = parseInt(document.getElementById('flashnumright').value)+1;
+      var end='yn';
+    }
+    if ((qa == 'f') && (x == 'c')) {
+      fl.rows[r].cells[0].innerHTML='f';
+      document.getElementById('listTable').rows[r].cells[1].innerHTML='<span class="fcresult"><font color="red">&#10008;</font></span>';
+      document.getElementById('flashnumwrong').value = parseInt(document.getElementById('flashnumwrong').value)+1;
+      document.getElementById('flashresult').value = 'f';
+      var end='yn';
+    }
+    if (end) {
+      if (end=='yn') {
+        flashcard('q');
+      }
+      break;
+    }
+    if (r == len-1) {
+      document.getElementById('showanswer').style.display="none";
+      document.getElementById('answerr').style.display="none";
+      document.getElementById('answerw').style.display="none";
+      var right = parseInt(document.getElementById('flashnumright').value);
+      var wrong = parseInt(document.getElementById('flashnumwrong').value);
+      var result = 'You got ' + right + ' right and ' + wrong + ' wrong.'
+      if (wrong > 0) {
+        result = result + ' Would you like to retry the ones you missed?'
+        document.getElementById('flashbox').innerHTML=result;
+        document.getElementById('fcretry').style.display="block";
+      }
+      else {
+        result = result + ' Good work!';
+        document.getElementById('flashbox').innerHTML=result;
+      }
+    }
+    r++;
+  }
+}
+
+function fc_retry() {
+  document.getElementById('flashresult').value = '';
+  document.getElementById('flashnumright').value = '0';
+  document.getElementById('flashnumwrong').value = '0';
+  var r = 0;
+  var fl=document.getElementById('datatable');
+  var len = fl.rows.length;
+  while (r < len) {
+    if (fl.rows[r].cells[0].innerHTML=='f') {
+      fl.rows[r].cells[0].innerHTML='n';
+    }
+    r++;
+  }
+}
+
+
+function fc_reset() {
+  var r = 0;
+  document.getElementById('fcretry').style.display="none";
+  document.getElementById('flashresult').value = '';
+  document.getElementById('flashnumright').value = '0';
+  document.getElementById('flashnumwrong').value = '0';
+  var fl=document.getElementById('datatable');
+  var len = fl.rows.length;
+  while (r < len) {
+    fl.rows[r].cells[0].innerHTML='n';
+    r++;
+  }
+}
+
+
+function clearFlash() {
+  var fl=document.getElementById('datatable');
+  var iRowCount = fl.rows.length;
+  var r = 0;
+  while (r < iRowCount) {
+    document.getElementById('listTable').rows[r].cells[1].innerHTML='&nbsp;';
+    r++;
+  }
+}
+
+// END FLASHCARD
+
+function resetBlanks() {
+  document.getElementById('percentRemove').value='0';
+  document.getElementById('itemsBlanked').value='0';
+}
+
+function setCurrentItemNum(input, mode) {     // mode indicates whether line number ('n') is given (in 'input') or should be calculated
+  if (mode == 'n') { 
+    x = input;
+  }
+  else if (mode == 'blank') { 
+    x = 'skip';
+  }
+  else {
+    var x=input.parentNode.parentNode.rowIndex;
+  }
+  if (x != 'skip') {
+    var prev = document.getElementById('previousitemNum').value;
+    var ltcell =  document.getElementById('listTable').rows[x].cells;
+    ltcell[0].innerHTML='&rarr;';
+    if (x != prev) {
+      var pltcell =  document.getElementById('listTable').rows[prev].cells;
+      pltcell[0].innerHTML='&nbsp;';
+    }
+    document.getElementById('currentitemNum').value = x;
+    document.getElementById('previousitemNum').value =   document.getElementById('currentitemNum').value;
+  }
+}
+
+
+function fetchItem(x) {
+  // put text in currentitem field
+  var fl=document.getElementById('datatable');
+  var startStr = fl.rows[x].cells[2].innerHTML;
+  var strOneLine = startStr.replace(new RegExp( "\\n", "g" ), " ");
+  document.getElementById('currentitem').value = strOneLine;
+}
+
+function hideShow(x) {
+  if (x == 'Hide') {
+    document.getElementById('out').style.visibility="hidden";
+    document.getElementById('showhide').value = 'Show';
+  }
+  else {
+    document.getElementById('out').style.visibility="visible";
+    document.getElementById('showhide').value = 'Hide';
+  }
+}
+
+
+function popHide() {
+  var element=document.getElementById('wordtag');
+  element.style.display="none";
+  element.innerHTML='';
+}
+
+function popLetterShow(id) {
+  r = stripNum(id);
+  document.getElementById('wordtag').innerHTML=r[0];
+  popSettings(id);
+  document.getElementById('word').value=r[1];
+}
+
+function popWordShow(id) {
+  r = stripNum(id);
+  document.getElementById('wordtag').innerHTML=r[1];
+  popSettings(id);
+}
+
+
+
+var __isFireFox = navigator.userAgent.match(/firefox/i);
+var __isChrome = navigator.userAgent.match(/chrome/i);
+
+function popSettings(element) {
+  var resx = 0; 
+  var resy = 0;
+  if (element !== null) {
+    resx = document.getElementById(element).offsetLeft; 
+    resy = document.getElementById(element).offsetTop; 
+    var offsetParent = document.getElementById(element).offsetParent;
+    var parentNode = document.getElementById(element).parentNode;
+    while (offsetParent !== null) {
+      resx += offsetParent.offsetLeft;
+      resy += offsetParent.offsetTop;
+      if (offsetParent != document.body && offsetParent != document.documentElement) {
+        resx -= offsetParent.scrollLeft;
+        resy -= offsetParent.scrollTop;
+      }
+      //next lines are necessary to support FireFox problem with offsetParent
+      if (__isFireFox) {
+        while (offsetParent != parentNode && parentNode !== null) {
+          resx -= parentNode.scrollLeft;
+          resy -= parentNode.scrollTop;
+          parentNode = parentNode.parentNode;
+        }    
+      }
+      parentNode = offsetParent.parentNode;
+      offsetParent = offsetParent.offsetParent;
+    }
+  }
+  
+  var left = resx + 'px';
+  var top  = resy + 'px';
+  var oElement=document.getElementById('wordtag');
+  oElement.style.left= left;
+  oElement.style.top=top;
+  if (__isChrome) {
+    oElement.style.top= resy-2;
+  }
+  else {
+    oElement.style.top= resy;
+  }
+  oElement.style.display="block";
+}
+
+
+function processText(increment, letterorword) { 
+  var itemsBlanked = document.getElementById('itemsBlanked').value;
+  itemsBlanked = 1 * itemsBlanked;
+  var percent = document.getElementById('percentRemove').value;
+  percent = 1* percent;
+  var msg = document.getElementById('currentitem').value;
+  msg = msg.replace(new RegExp( "\n", "g" ), " ");
+  msg = msg.replace(new RegExp( '<br>', "g" ), " <br> ");
+  // msg = msg.replace(new RegExp( "\n", "g" ), " <br> "); 
+  // msg = msg.replace(new RegExp( '-', "g" ), ' <-> ');
+  msg = msg.replace(new RegExp( " +", "g" ), " ");
+  
+  anarray = msg.split(" ");
+  var itemsInArray = anarray.length;
+  percent=calcPercent(percent, increment);
+  if (percent > 0) {
+      var numberofwordstoblank = Math.ceil(itemsInArray * (percent / 100));
+      if ((increment > 0) && (numberofwordstoblank <= itemsBlanked) && (itemsInArray > itemsBlanked)) {
+          numberofwordstoblank = itemsBlanked+1;
+      }
+      if ((increment < 0) && (numberofwordstoblank >= itemsBlanked) && (itemsBlanked > 0)) {
+          numberofwordstoblank = itemsBlanked-1;
+      }
+      document.getElementById('itemsBlanked').value = numberofwordstoblank;
+      percent = (numberofwordstoblank/itemsInArray)*100;
+  }
+  else {
+      var numberofwordstoblank = 0;
+      document.getElementById('itemsBlanked').value = 0;
+  }
+  wordstoBlank=randomNum(itemsInArray,numberofwordstoblank);
+  var reg = new RegExp("<br>");
+  //OLD var reg1 = new RegExp("[A-Za-z]");
+  var reg1 = new RegExp("[A-Za-zɣáÁàÂåÅäÄãÃªçéÉèêÊëËǝƎğĞíÍìÎïÏİĳĲÑŋÓôÔöÖõÕøØºĸšŠŞſßúÚùÛüÜƿǷýÝÿŸȝžŽ]");
+  i = 0;
+  var spanid;
+
+  while (i < itemsInArray) {
+      spanid = anarray[i];
+      //OLD spanid = spanid.replace( /^[\W]*([\w]*'*[\w]*)[\W]*$/ , "$1");
+      spanid = spanid.replace(/^[@\#\$%^&\*+=|~`\'\"\(\)\[\]/\\{},:.;?!¡¿,:«»€‹›„”“‘’·\-\—\– ]*/, "");
+      spanid = spanid.replace(/[@\#\$%^&\*+=|~`\'\"\(\)\[\]/\\{},:.;?!¡¿,:«»€‹›„”“‘’·\-\—\– ]*$/, "");
+
+       // if a break mark, leave it alone
+      if (reg.test(anarray[i]) == true) {  
+          i++;
+          continue;
+      }
+      // if it does not have letters (such as a dash -- ), leave it alone
+      if (reg1.test(anarray[i]) == false) {                           
+          i++;
+         continue;
+      } 
+      var punc = getPunctuation(anarray[i]);
+      if (letterorword == 'L') {
+          //OLD anarray[i] = anarray[i].replace(/([\w])[\w]*[\W]*[\w]/, "$1");
+          anarray[i] = spanid.substring(0,1);
+
+          // Show blanks
+          if (wordstoBlank[i]) {
+            var replace = punc[0] + '<span id="' + i + '~_~' + spanid + '" onMouseOver="popLetterShow(this.id)">_</span>' + punc[1];
+          }
+          // Show non-blanks
+          else {
+           //OLD var replace = '<span id="' + i + '~_~' + spanid + '" onMouseOver="popLetterShow(this.id)">' + anarray[i] + '</span>';
+           var replace = punc[0] + '<span id="' + i + '~_~' + spanid + '" onMouseOver="popLetterShow(this.id)">' + anarray[i] + '</span>' + punc[1];
+          }
+          anarray[i] = replace;
+      }
+      // For word display, shows blanks
+      else {
+          if (wordstoBlank[i]) {
+              var replace = punc[0] + '<span id="' + i + '~_~' + spanid + '" \
+              onMouseOver="popLetterShow(this.id)" \
+              >_</span>' + punc[1];
+              anarray[i] = replace; 
+          }
+      }
+      i++;
+  }
+  var tojoin = anarray.join(' ');
+  tojoin = tojoin.replace(new RegExp("<br>", "g"), '<br />');
+  //tojoin = tojoin.replace(new RegExp(" <-> ", "g"), '-');
+  document.getElementById('out').innerHTML=tojoin;
+  document.getElementById('percentRemove').value=percent;
+  
+  if (percent > 0) {
+    document.getElementById('lotsfewergray').style.display="none";
+    document.getElementById('fewergray').style.display="none";
+    document.getElementById('lotsfewerunderlines').style.display="inline";
+    document.getElementById('fewerunderlines').style.display="inline";
+  }
+  else {
+    document.getElementById('lotsfewerunderlines').style.display="none";
+    document.getElementById('fewerunderlines').style.display="none";
+    document.getElementById('lotsfewergray').style.display="inline";
+    document.getElementById('fewergray').style.display="inline";
+  }
+  
+  document.getElementById('wordletter').value=letterorword;
+}
+
+
+function randomNum(arraylen, numtoblank) {
+  var results = new Array();
+  if (numtoblank == 0) { results.push(''); return results; }
+  else {
+    var x = 0;
+    while (x < numtoblank) {
+      var randomnumber= Math.floor(arraylen * Math.random());
+      if (results[randomnumber]) {
+      } else {
+        results[randomnumber] = 'num';
+        x++;
+      }
+    }
+  }
+  return results;
+}
+
+function calcPercent(percent, increment) {
+  percent = percent * 1;
+  increment = increment * 1;
+  percent = percent + increment;
+  if (percent < 0) { percent = 0; }
+  if (percent > 100) { percent = 100; }
+  return percent;
+}
+
+function getPunctuation(word) {
+  //NEW
+  var begin = word.match(/^[@\#\$%^&\*+=|~`\'\"\(\)\[\]/\\{},:.;?!¡¿,:«»€‹›„”“‘’·\-\—\–]*/);
+  var end = word.match(/[@\#\$%^&\*+=|~`\'\"\(\)\[\]/\\{},:.;?!¡¿,:«»€‹›„”“‘’·\-\—\–]*$/);
+  var result = new Array(begin,end);
+  return result;
+}
+
+function showWordFromLetter(id) {
+  document.getElementById('wordtag').style.display="block";
+  document.getElementById('wordtag').innerHTML=document.getElementById('word').value
+  document.getElementById('word').value='';
+}
+
+function stripNum(x)  {
+  //NEW
+  var n = x.split("~_~");
+  var  fl = n[1].substring(0,1);
+  var result = new Array(fl,n[1]);
+  return result;
+}
+
+function savePg(x) {
+  d = new Date();
+  t = d.getTime();
+  t = t/1000;
+  if ((1506548736 < t) || (x == 'off')) {
+    document.getElementById('saveinstructions').style.display="none";
+  }
+}
+
+function changeTab(x) {
+  if (x == 'letters') { 
+    document.getElementById('controlbuttons').style.backgroundColor = '#d39930';
+  }
+  else {
+    document.getElementById('controlbuttons').style.backgroundColor = '#e3e38d';
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+html, body { 
+ font-family: "tahoma", sans-serif; 
+ font-size: 14px; 
+ color: #666666;
+ margin: 0;
+ padding: 0; 
+ background: #535f7d; 
+}
+
+
+body {
+ margin: 0;
+ padding: 0;
+}
+
+.clear {
+ clear: both; 
+ font-size: 1px; 
+ height: 1px;                                   
+
+}
+
+a, a:visited {
+ color: #a94ea6;
+ text-decoration: none;
+}
+
+a:hover, a:active {
+ text-decoration: underline; 
+}
+
+#header {
+ width: 100%;
+ height: 132px;
+ background: #e9e996;
+ padding-bottom: 10px;
+}
+
+#hdr {
+ width: 980px;
+ height: 132px;
+ margin: 0 auto;
+ padding: 12px 0 10px 0;
+}
+ 
+ 
+#hdr #logo {
+ padding: 15px 0 0 10px;
+ font-size: 48px;
+ color: #516ba8;
+}
+
+#hdr #logo a {
+ color: #516ba8;
+ text-decoration: none;
+}
+
+#nav {
+ padding: 10px 0 0 10px; 
+ margin: 0; 
+}
+
+#nav ul {  
+ float: left;
+ width: 490px;
+ height: 31px;                               
+ padding: 0;
+ margin: 0;
+ list-style: none; 
+}
+
+
+#nav ul li {                                       
+ display: inline; 
+}
+
+
+#nav ul li a, 
+#nav ul li a:visited {
+ float: left; 
+ width: auto;
+ height: 31px; 
+ padding: 5px 15px 0 15px;
+ margin: 0 10px 0 0; 
+ font-size: 18px;
+ color: #4096ee;
+ font-weight: bold; 
+ background: #ffffff; 
+ text-decoration: none;
+}
+
+#nav ul li a:active, 
+#nav ul li a:hover {
+ text-decoration: none;
+ color: #ffffff; 
+ background: #4096ee; 
+}
+
+#navRt {
+ padding: 0 25px 0 0; 
+ margin: 0; 
+}
+
+#navRt ul {  
+ float: right;
+ width: 110px;
+ height: 31px;                               
+ padding: 0;
+ margin: 0 10px 0 0;
+ list-style: none;
+}
+
+#navRt ul li {                                       
+ display: inline; 
+}
+
+#navRt ul li a, 
+#navRt ul li a:visited {
+ float: left; 
+ width: auto;
+ height: 31px; 
+ padding: 5px 15px 0 15px;
+ margin: 0 10px 0 0; 
+ font-size: 18px;
+ color: #d39930;
+ font-weight: bold; 
+ background: #ffffff; 
+ text-decoration: none;
+}
+
+#navRt ul li a:active, 
+#navRt ul li a:hover {
+ text-decoration: none;
+ color: #ffffff;
+ background: #d39930; 
+}
+
+
+/* Main Content Well */
+
+.top {
+ width: 613px;
+ height: 70px;
+ background: #4096ee;
+}
+
+.instructions {
+ color: #ecef10;
+ padding: 10px;
+ margin: 0 0 0 0;
+}
+
+#content {
+ height: 350px;
+ padding: 20px;
+ color: #333333;
+ overflow: auto;
+}
+
+#middle {
+ width: 100%;
+ height: 100%;
+ background: #535f7d; 
+ padding-bottom: 12%;
+}
+
+#container {
+ width: 980px;
+ margin: 0 auto;
+ padding: 25px;
+}
+
+#saveinstructions  {  
+ background-color: white;
+ border: 2px solid #4096ee;
+ padding: 5px 10px 5px 10px;
+ margin: 0 0 20px 0;
+}
+
+#saveinstructions a, #saveinstructions a:visited {
+ color: #4096ee;
+ background: #ffffff; 
+ text-decoration: none;
+}
+
+#saveinstructions a:active, #saveinstructions a:hover {
+ text-decoration: none;
+ color: #ffffff; 
+ background: #4096ee; 
+}
+
+#lWell {
+ float: left;
+ width: 613px;
+ background: #ffffff;
+ margin: 0 0 0 25px;
+}
+
+.label {
+ background: #535f7d;
+ font-family: "tahoma", sans-serif; 
+ font-size: 18px; 
+ color: yellow;
+ height: 25px;
+}
+
+#memlabel, #displaylabel, #flashlabel {
+ display: none;
+}
+
+#memorize {
+ min-height: 383px;
+ display: none;
+}
+
+#meminstructions {
+ color: #ecef10;
+ margin: 0 0 0 0;
+ padding: 5px 10px 0 10px;
+ font-family: "tahoma", sans-serif; 
+ font-size: 14px; 
+}
+
+#tabholder {
+ margin: 10px 0 0 15px;
+ width: 145px;
+ height: 19px;
+}
+
+  #wordstab {
+   float: left;
+   width: 60px;
+   height: 19px;
+   font-family: "tahoma", sans-serif; 
+   font-size: 14px; 
+   background: #e3e38d;
+   color: white;
+   font-weight: bold;
+   padding: 0 0 0 3px;
+   cursor: pointer;
+  }
+  #letterstab {
+   margin: 0 0 0 10px;
+   float: left;
+   width: 60px;
+   height: 19px;
+   font-family: "tahoma", sans-serif; 
+   font-size: 14px;
+   background: #d39930;
+   color: white;
+   font-weight: bold;
+   padding: 0 0 0 3px;
+   cursor: pointer;
+ }
+
+#controlbuttons {
+ padding: 1px 0 0 5px;
+ width: 608px;
+ height: 24px;
+ background: #e3e38d;
+}
+
+.graymem {
+  font: bold 70% 'trebuchet ms',helvetica,sans-serif;
+  color: lightgray;
+}
+
+.cbtn {
+  font: bold 70% 'trebuchet ms',helvetica,sans-serif;
+  color: gray;
+}
+
+.cbtnhov {
+  font: bold 70% 'trebuchet ms',helvetica,sans-serif;
+  color: black;
+}
+
+#lotsfewergray {
+ margin: 0 0 0 20px;
+}
+
+#lotsfewerunderlines {
+ margin: 0 0 0 20px;
+}
+
+#showhide {
+ margin: 0 0 0 20px;
+}
+
+#out {
+ margin: 10px 0 0 0;
+ padding: 0 10px 0 10px;
+ min-height: 273px;
+ cursor: default;
+ background-color: white;
+ font-size: 20px;
+ width: 593px;
+}
+
+.bottom {
+ height: 30px;
+ width: 613px;
+ background: #e3e38d;
+ clear: both;
+}
+
+#wordtag {
+ position: absolute;
+ cursor: default;
+ display: none;
+ background-color: orange;
+ font-size: 20px;
+ padding: 2px;
+ margin-top: 0px;
+ margin-bottom: 0px;
+}
+
+
+#displayWell {
+ display: none;
+ width: 613px;
+ min-height: 383px;
+ background: #ffffff;
+}
+
+#displayall {
+ min-height: 269px;
+ padding: 10px;
+}
+
+
+#flashboxholder {
+ display: none;
+ width: 613px;
+ min-height: 383px;
+}
+
+#flashbox {
+  min-height: 243px;
+  padding: 5px 35px 0 35px;
+  background-color: white;
+  font-size: 20px;
+  width: 543px;
+  clear: both;
+}
+
+#flashrespond {
+ float: left;
+ padding: 5px 35px 0 35px;
+ width: 543px;
+ height: 30px;
+ background-color: white;
+}
+
+.membutton {
+  font-weight: bold;
+}
+
+
+#connector {
+ float: left;
+ width: 110px;
+ height: 18px;
+ margin: 150px 0 0 0;
+ padding: 0;
+ background-color: white;
+}
+
+
+#rWell {
+ float: right;
+ width: 207px;
+ padding: 0;
+ margin: 0 25px 0 0;
+ color: #fdfd08;
+ font-size: 18px;
+}
+
+#rtModule {
+ width: 199px;
+ min-height: 383px;
+ background: #ffffff;
+ color:#333333;
+ padding: 5px 0 0 0;
+ font-size: 14px;
+}
+
+#rtModule p {
+ padding: 15px 10px;
+}
+
+#datatable {
+ display: none;
+}
+
+
+#footer {
+ position: relative;
+ width: 100%;
+ height: 100px;
+ bottom: 0;
+ background: #3d8de0;
+}
+
+#ftr {
+ width: 980px;
+ margin: 0 auto;
+}
+
+/* FORM elements */
+
+form {
+ padding: 10px 0;
+}
+</style>
+
+
+
+
+</head>
+
+<body onload="savePg(), changeNavButton(&#39;pageMem&#39;), setCurrentItemNum(0, &#39;n&#39;)">
+<div id="header">
+ <div id="hdr">
+  <div id="logo" onclick="changeNavButton(&#39;pageEnter&#39;)">
+   <a href="http://www.memorizenow.com/MemorizeNow.html#">Memorize Now</a>
+  </div>
+  <div id="nav">
+   <ul>
+    <li id="pageMem" onclick="changeNavButton(&#39;pageMem&#39;)"><a href="JavaScript:void(0);">memorize</a></li>
+    <li id="pageFlash" onclick="changeNavButton(&#39;pageFlash&#39;)"><a href="JavaScript:void(0);">flash card</a></li>
+    <li id="pageDisplay" onclick="changeNavButton(&#39;pageDisplay&#39;)"><a href="JavaScript:void(0);">display all</a></li>
+   </ul>
+  </div>
+  <div id="navRt">
+   <ul>
+    <li id="pageEnter" onclick="changeNavButton(&#39;pageEnter&#39;)"><a href="JavaScript:void(0);">reconnect</a></li>
+   </ul>
+  </div>
+ </div>
+ <form action="http://www.memorizenow.com/index.html" method="post" id="submitdata">
+  <input type="hidden" name="allitems" id="allitems" value="">
+ </form>
+
+
+</div>
+<div class="clear"></div>
+
+<div id="middle">
+ <div id="container">
+
+  <div id="saveinstructions">
+    <p><b>Save Instructions</b></p>
+    <p>To save your memory items, you must save this page. When you save the page, you can use MemorizeNow even while you are disconnected from the Internet.</p>
+    <p>To save this page on your computer, open the <b>Save as</b> (Internet Explorer) or <b>Save page as</b> (Firefox, Chrome, Safari) dialog box on your computer - <b>Ctrl-s</b> (or <b>Cmd-s</b> for Mac) is a good shortcut - and save the file.
+    </p>
+    <p>When you want to memorize, open the saved file with your browser. (<b>Ctrl-o</b> is a handy shortcut.)</p>
+    <p> To add, edit or delete items, click <b>Reconnect</b> to return to the MemorizeNow web site.</p>
+    <p><b>Note:</b> You use this tool entirely at your own risk.</p>
+    <a href="JavaScript:void(0);" onclick="savePg(&#39;off&#39;)">hide these instructions</a>
+  </div>
+
+  <div id="lWell">
+    <!-- All the Memorize functionality -->
+    <div id="memlabel" class="label" style="display: block;">memorize</div>
+    <div id="memorize" style="display: block;">
+    <div class="top">
+      <p id="meminstructions">see words or just first letters; add blanks; roll over and click for hints</p>
+      <div class="box" id="tabholder">
+        <div class="box" id="wordstab" title="show words" onclick="changeTab(&#39;words&#39;), resetBlanks(), processText(0, &#39;W&#39;) ">Words</div>
+        <div class="box" id="letterstab" title="show first letters of words" onclick="changeTab(&#39;letters&#39;), resetBlanks(), processText(0, &#39;L&#39;) ">Letters</div>
+      </div>
+  
+      <div class="box" id="controlbuttons" style="background-color: rgb(227, 227, 141);">
+        <input type="button" class="graymem" id="lotsfewergray" value="&lt;&lt;" style="display: inline;">
+        <input type="button" class="graymem" id="fewergray" value="&lt;" style="display: inline;">
+        <input type="button" class="cbtn" id="lotsfewerunderlines" value="&lt;&lt;" title="lots fewer blanks" onmouseover="this.className=&#39;cbtnhov&#39;" onmouseout="this.className=&#39;cbtn&#39;" onclick="processText(-30, document.getElementById(&#39;wordletter&#39;).value)" style="display: none;">
+        <input type="button" class="cbtn" id="fewerunderlines" value="&lt;" title="fewer blanks" onmouseover="this.className=&#39;cbtnhov&#39;" onmouseout="this.className=&#39;cbtn&#39;" onclick="processText(-10, document.getElementById(&#39;wordletter&#39;).value)" style="display: none;">
+        <input type="button" class="cbtn" id="moreunderlines" value="&gt;" title="more blanks" onmouseover="this.className=&#39;cbtnhov&#39;" onmouseout="this.className=&#39;cbtn&#39;" onclick="processText(10, document.getElementById(&#39;wordletter&#39;).value)">
+        <input type="button" class="cbtn" id="lotsmoreunderlines" value="&gt;&gt;" title="lots more blanks" onmouseover="this.className=&#39;cbtnhov&#39;" onmouseout="this.className=&#39;cbtn&#39;" onclick="processText(30, document.getElementById(&#39;wordletter&#39;).value)">
+        <input type="button" class="cbtn" id="showhide" value="Hide" title="hide/show item" onmouseover="this.className=&#39;cbtnhov&#39;" onmouseout="this.className=&#39;cbtn&#39;" onclick="hideShow(document.getElementById(&#39;showhide&#39;).value)">
+       </div>
+    </div>
+      <div id="out" style="visibility: visible;">�You yourselves have seen what I did to the Egyptians, and how I bore you on eagles' wings and brought you to myself. Now therefore, if you will indeed obey my voice and keep my covenant, you shall be my treasured possession among all peoples, for all the earth is mine; and you shall be to me a kingdom of priests and a holy nation.� These are the words that you shall speak to the people of Israel.�</div>
+      <div class="bottom">&nbsp;&nbsp;</div>
+    </div>
+    <p id="wordtag" onmousedown="showWordFromLetter(document.getElementById(&#39;word&#39;).value)" onmouseout="popHide()" onmouseup="popHide()"></p>
+
+
+  <!-- All the Flashcard functionality -->
+  <div id="flashlabel" class="label" style="display: none;">flash cards</div>
+  <div id="flashboxholder" style="display: none;">
+    <div class="top">
+      <p class="instructions">try to remember the item, then click <i>show answer</i> and indicate whether you were <i>right</i> or <i>wrong</i></p>
+    </div>
+      <div id="flashbox"></div>
+      <div id="flashrespond">
+        <input class="membutton" id="showanswer" type="submit" onclick="flashcard(&#39;a&#39;)" value="Show Answer">
+        <input class="membutton" id="answerr" type="submit" onclick="flashcard(&#39;p&#39;)" value="Right">
+        <input class="membutton" id="answerw" type="submit" onclick="flashcard(&#39;f&#39;)" value="Wrong">
+        <input class="membutton" id="fcretry" type="submit" onclick="fc_retry(), flashcard(&#39;q&#39;)" value="Retry">
+      </div>
+      <div class="bottom">&nbsp;&nbsp;</div>
+  </div>
+  
+
+  <!-- All the Display All functionality -->
+  <div id="displaylabel" class="label" style="display: none;">display all</div>
+  <div id="displayWell" style="display: none;">
+    <div class="top">
+     <p class="instructions">all your memory items in one place</p>
+    </div>
+    <div id="displayall"></div>
+    <div class="bottom">&nbsp;&nbsp;</div>
+  </div>
+  
+  </div>
+
+
+ <div id="connector"> </div>
+
+ <div id="rWell">
+  <div id="listlabel" class="label">items to memorize</div>
+  <div id="rtModule">
+
+    <table id="listTable">
+          
+        <tbody><tr>
+          <td>&#8594;</td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Exodus 19:4-6</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Deuteronomy 6:4-5</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Joshua 1:7-9</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">1 Samuel 12:23</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">1 Samuel 15:22</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">2 Chronicles 7:14</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">2 Chronicles 16:9</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Job 19:25-27</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Job 42:5-6</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Psalm 16:2-3</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Psalm 34:8-9</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Psalm 37:4-7</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Psalm 46:10</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Psalm 51:10-12</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Psalm 84:10</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Psalm 103:8-12</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Psalm 119:11</a></td>
+        </tr>
+          
+        <tr>
+          <td> </td>
+          <td>&nbsp;</td>
+          <td><a href="JavaScript:void(0);" class="list" onclick="changeTab(&#39;word&#39;), resetBlanks(), setCurrentItemNum(this, &#39;t&#39;), changeNavButton(&#39;pageMem&#39;)" title="click to memorize">Psalm 119:105</a></td>
+        </tr>
+          
+    </tbody></table>
+
+  </div>
+ </div>
+ <div class="clear"></div>
+
+ </div>
+</div>
+
+<table id="datatable">
+  <tbody><tr><td>c</td><td>Exodus 19:4-6</td><td>�You yourselves have seen what I did to the Egyptians, and how I bore you on eagles' wings and brought you to myself. Now therefore, if you will indeed obey my voice and keep my covenant, you shall be my treasured possession among all peoples, for all the earth is mine; and you shall be to me a kingdom of priests and a holy nation.� These are the words that you shall speak to the people of Israel.�</td></tr>
+<tr><td>n</td><td>Deuteronomy 6:4-5</td><td>�Hear, O Israel: The Lord our God, the Lord is one. You shall love the Lord your God with all your heart and with all your soul and with all your might.</td></tr>
+<tr><td>n</td><td>Joshua 1:7-9</td><td>Only be strong and very courageous, being careful to do according to all the law that Moses my servant commanded you. Do not turn from it to the right hand or to the left, that you may have good success wherever you go. This Book of the Law shall not depart from your mouth, but you shall meditate on it day and night, so that you may be careful to do according to all that is written in it. For then you will make your way prosperous, and then you will have good success. Have I not commanded you? Be strong and courageous. Do not be frightened, and do not be dismayed, for the Lord your God is with you wherever you go.�</td></tr>
+<tr><td>n</td><td>1 Samuel 12:23</td><td>Moreover, as for me, far be it from me that I should sin against the Lord by ceasing to pray for you, and I will instruct you in the good and the right way.</td></tr>
+<tr><td>n</td><td>1 Samuel 15:22</td><td>And Samuel said,<br>
+<br>
+�Has the Lord as great delight in burnt offerings and sacrifices,<br>
+    as in obeying the voice of the Lord?<br>
+Behold, to obey is better than sacrifice,<br>
+    and to listen than the fat of rams.</td></tr>
+<tr><td>n</td><td>2 Chronicles 7:14</td><td>if my people who are called by my name humble themselves, and pray and seek my face and turn from their wicked ways, then I will hear from heaven and will forgive their sin and heal their land.</td></tr>
+<tr><td>n</td><td>2 Chronicles 16:9</td><td>For the eyes of the Lord run to and fro throughout the whole earth, to give strong support to those whose heart is blameless toward him. You have done foolishly in this, for from now on you will have wars.�</td></tr>
+<tr><td>n</td><td>Job 19:25-27</td><td>For I know that my Redeemer lives,<br>
+    and at the last he will stand upon the earth.<br>
+And after my skin has been thus destroyed,<br>
+    yet in my flesh I shall see God,<br>
+whom I shall see for myself,<br>
+    and my eyes shall behold, and not another.<br>
+    My heart faints within me!</td></tr>
+<tr><td>n</td><td>Job 42:5-6</td><td>I had heard of you by the hearing of the ear,<br>
+    but now my eye sees you;<br>
+therefore I despise myself,<br>
+    and repent in dust and ashes.�</td></tr>
+<tr><td>n</td><td>Psalm 16:2-3</td><td>I say to the Lord, �You are my Lord;<br>
+    I have no good apart from you.�<br>
+As for the saints in the land, they are the excellent ones,<br>
+    in whom is all my delight.</td></tr>
+<tr><td>n</td><td>Psalm 34:8-9</td><td>Oh, taste and see that the Lord is good!<br>
+    Blessed is the man who takes refuge in him!<br>
+Oh, fear the Lord, you his saints,<br>
+    for those who fear him have no lack!</td></tr>
+<tr><td>n</td><td>Psalm 37:4-7</td><td>Delight yourself in the Lord,<br>
+    and he will give you the desires of your heart.<br>
+Commit your way to the Lord;<br>
+    trust in him, and he will act.<br>
+He will bring forth your righteousness as the light,<br>
+    and your justice as the noonday.<br>
+Be still before the Lord and wait patiently for him;<br>
+    fret not yourself over the one who prospers in his way,<br>
+    over the man who carries out evil devices!</td></tr>
+<tr><td>n</td><td>Psalm 46:10</td><td>�Be still, and know that I am God.<br>
+    I will be exalted among the nations,<br>
+    I will be exalted in the earth!�</td></tr>
+<tr><td>n</td><td>Psalm 51:10-12</td><td>Create in me a clean heart, O God,<br>
+    and renew a right spirit within me.<br>
+Cast me not away from your presence,<br>
+    and take not your Holy Spirit from me.<br>
+Restore to me the joy of your salvation,<br>
+    and uphold me with a willing spirit.</td></tr>
+<tr><td>n</td><td>Psalm 84:10</td><td>For a day in your courts is better<br>
+    than a thousand elsewhere.<br>
+I would rather be a doorkeeper in the house of my God<br>
+    than dwell in the tents of wickedness.</td></tr>
+<tr><td>n</td><td>Psalm 103:8-12</td><td>The Lord is merciful and gracious,<br>
+    slow to anger and abounding in steadfast love.<br>
+He will not always chide,<br>
+    nor will he keep his anger forever.<br>
+He does not deal with us according to our sins,<br>
+    nor repay us according to our iniquities.<br>
+For as high as the heavens are above the earth,<br>
+    so great is his steadfast love toward those who fear him;<br>
+as far as the east is from the west,<br>
+    so far does he remove our transgressions from us.</td></tr>
+<tr><td>n</td><td>Psalm 119:11</td><td>I have stored up your word in my heart,<br>
+    that I might not sin against you.</td></tr>
+<tr><td>n</td><td>Psalm 119:105</td><td>Your word is a lamp to my feet<br>
+    and a light to my path.</td></tr>
+</tbody></table>
+
+<input type="hidden" id="currentitemNum" value="0">
+<input type="hidden" id="currentitem" value="�You yourselves have seen what I did to the Egyptians, and how I bore you on eagles&#39; wings and brought you to myself. Now therefore, if you will indeed obey my voice and keep my covenant, you shall be my treasured possession among all peoples, for all the earth is mine; and you shall be to me a kingdom of priests and a holy nation.� These are the words that you shall speak to the people of Israel.�">
+<input type="hidden" id="previousitemNum" value="0">
+<input type="hidden" id="flashresult" value="">
+<input type="hidden" id="flashnumright" value="">
+<input type="hidden" id="flashnumwrong" value="">
+<input type="hidden" id="wordletter" value="W">
+<input type="hidden" id="percentRemove" value="0">
+<input type="hidden" id="itemsBlanked" value="0">
+<input type="hidden" id="word" value="">
+
+
+<div id="footer">
+ <div id="ftr">&nbsp;&nbsp;</div>
+</div>
+<div class="clear"></div>
+
+
+
+</body></html>
